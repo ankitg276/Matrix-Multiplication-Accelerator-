@@ -1,0 +1,66 @@
+module MatrixMultiplication(
+    input clk,
+    input reset,
+    input [3:0] data, // 4-bit input for both matrices
+    input valid, // Valid signal for input data
+    output reg [9:0] result, // 10-bit result
+    output reg done // Signal to indicate completion
+);
+
+    reg [3:0] A [0:2][0:2]; // 3x3 matrix A
+    reg [3:0] B [0:2][0:2]; // 3x3 matrix B
+    reg [9:0] C [0:2][0:2]; // 3x3 result matrix C, 10 bits to store the results
+    reg [3:0] row, col; // Indices for row and column
+    reg [1:0] step; // Step counter for processing
+    reg [4:0] index; // Index for input data
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            row <= 0;
+            col <= 0;
+            step <= 0;
+            index <= 0;
+            done <= 0;
+            result <= 0;
+        end else begin
+            if (valid && step == 0) begin
+                // Alternately store data in A and B matrices
+                if (index < 9) begin
+                    A[index / 3][index % 3] <= data;
+                end else begin
+                    B[(index - 9) / 3][(index - 9) % 3] <= data;
+                end
+                
+                if (index < 17) index <= index + 1;
+                else begin
+                    step <= 1;
+                    index <= 0;
+                end
+            end else if (step == 1) begin
+                // Perform matrix multiplication
+                for (row = 0; row < 3; row = row + 1) begin
+                    for (col = 0; col < 3; col = col + 1) begin
+                        C[row][col] <= (A[row][0] * B[0][col] + A[row][1] * B[1][col] + A[row][2] * B[2][col]);
+                    end
+                end
+                step <= 2;
+                row <= 0;
+                col <= 0;
+            end else if (step == 2) begin
+                // Output the result
+                result <= C[row][col];
+                if (col < 2) col <= col + 1;
+                else if (row < 2) begin
+                    col <= 0;
+                    row <= row + 1;
+                end else begin
+                    done <= 1;
+                    step <= 0; // Reset step to 0 for next calculation
+                end
+            end
+        end
+    end
+endmodule  
+
+
+This is the basic code which has to be simplified
